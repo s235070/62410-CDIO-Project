@@ -7,18 +7,26 @@ from ev3dev2.sensor.lego import TouchSensor
 # Motors on outputs B & C
 tank = MoveTank(OUTPUT_B, OUTPUT_C)
 
-# Touch Sensor on S1 ("in1")
+# Touch Sensor on port S1 → 'in1'
 ts = TouchSensor('in1')
 
 try:
     while True:
-        # Check if touch sensor is pressed
+        # If touch sensor is pressed
         if ts.is_pressed:
             tank.off()
-            print("Touch sensor is PRESSED. Pausing for 1s...")
-            time.sleep(1)
+            print("Touch sensor pressed! Turning 180°...")
+
+            # Perform a 180° turn
+            # Adjust 'seconds' or 'speeds' below so the robot truly rotates ~180
+            tank.on_for_seconds(left_speed=30, right_speed=-30, seconds=2)
+
+            # After the turn, continue forward
+            print("Turn complete. Driving forward again.")
+            tank.on(left_speed=-30, right_speed=-30)
+
         else:
-            # Drive forward at negative speeds if your robot is reversed
+            # Drive forward if not pressed
             tank.on(left_speed=-30, right_speed=-30)
 
         time.sleep(0.1)
@@ -26,4 +34,3 @@ try:
 except KeyboardInterrupt:
     print("CTRL+C detected, stopping.")
     tank.off()
-time.sleep(0.1)  # wait a bit before exiting
