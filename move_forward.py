@@ -6,7 +6,7 @@ from time import sleep
 tank_drive = MoveTank(OUTPUT_D, OUTPUT_A)
 
 # Move forward at speed=50 for 2 seconds
-tank_drive.on_for_seconds(left_speed=100, right_speed=100, seconds=5)
+tank_drive.on_for_seconds(left_speed=50, right_speed=50, seconds=2)
 
 # Stop motors
 tank_drive.off()
