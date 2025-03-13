@@ -17,4 +17,3 @@ try:
 
 except KeyboardInterrupt:
     print("Exiting Gyro test.")
-gyro.close()
