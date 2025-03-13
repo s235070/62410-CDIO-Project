@@ -15,7 +15,7 @@ try:
         # If touch sensor is pressed
         if ts.is_pressed:
             tank.off()
-            print("Touch sensor pressed! Turning 180°...")
+            print("Touch sensor pressed! Turning 180 degrees...")
 
             # Perform a 180° turn
             # Adjust 'seconds' or 'speeds' below so the robot truly rotates ~180
