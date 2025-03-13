@@ -34,7 +34,7 @@ This project aims to develop an **autonomous robot** (“GolfBot”) that can co
 | **Benjamin Hadziosmanovic** | s235764   | HadziosmanovicB    |
 | **Lano Kawan Ismail**   | s235785   | s235785            |
 | **Ali W. Al-Sayyad**    | s235792   | Alix1620           |
-| **Younes S. Humadi**    | s235771   | YH131313           |
+| **Younes S. Humadi**    | s235771   | YH1313313           |
 | **Haris Hussain**       | s235775   | s235775            |
 
 *(Above photo shows all team members. Each ID matches our official credentials.)*
