@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C
+from ev3dev2.motor import MoveTank, OUTPUT_A, OUTPUT_D
 from ev3dev2.sensor.lego import UltrasonicSensor
 from time import sleep
 
 # Initialize tank drive on ports B & C
-tank = MoveTank(OUTPUT_B, OUTPUT_C)
+tank = MoveTank(OUTPUT_A, OUTPUT_D)
 
 # Initialize ultrasonic sensor on port S1 (use 'in1')
 us = UltrasonicSensor('in1')
