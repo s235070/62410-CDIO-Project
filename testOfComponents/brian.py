@@ -16,12 +16,12 @@ try:
         distance = us.distance_centimeters
 
         # If an obstacle is within 4 cm, turn away
-        if distance < 4:
+        if distance < 10:
             # Stop before turning
             tank.off()
 
             # Turn left for 1 second (adjust speeds/time as desired)
-            tank.on_for_seconds(left_speed=-30, right_speed=30, seconds=1)
+            tank.on_for_seconds(left_speed=-30, right_speed=30, seconds=2)
         else:
             # Drive forward indefinitely
             tank.on(left_speed=-30, right_speed=-30)
