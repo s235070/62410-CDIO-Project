@@ -24,7 +24,7 @@ try:
             tank.on_for_seconds(left_speed=-30, right_speed=30, seconds=1)
         else:
             # Drive forward indefinitely
-            tank.on(left_speed=30, right_speed=30)
+            tank.on(left_speed=-30, right_speed=-30)
 
         # Check again after a short delay
         sleep(0.1)
