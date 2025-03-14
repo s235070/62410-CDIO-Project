@@ -1,58 +1,64 @@
 import cv2
 import numpy as np
+import os
 
-def main():
-    # Open your USB camera (likely index 1)
-    cap = cv2.VideoCapture(0)
+# EV3 SSH details
+EV3_IP = "172.20.10.8"
+EV3_USER = "robot"
 
-    if not cap.isOpened():
-        print("Cannot open camera on index 1.")
-        return
+def send_ev3_command(command):
+    """Send a shell command to the EV3 via SSH"""
+    os.system(f"ssh {EV3_USER}@{EV3_IP} '{command}'")
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Can't receive frame. Exiting...")
-            break
+# Open PC camera
+cap = cv2.VideoCapture(0)
 
-        # Convert to HSV
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+if not cap.isOpened():
+    print("Cannot open camera.")
+    exit()
 
-        # Define HSV range for orange (adjust if needed)
-        lower_orange = np.array([10, 100, 100])
-        upper_orange = np.array([25, 255, 255])
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Can't receive frame. Exiting...")
+        break
 
-        # Make a mask
-        mask = cv2.inRange(hsv, lower_orange, upper_orange)
+    # Convert frame to HSV
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Find contours in the mask
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Define orange color range
+    lower_orange = np.array([10, 100, 100])
+    upper_orange = np.array([25, 255, 255])
 
-        if contours:
-            # Largest contour by area
-            largest_contour = max(contours, key=cv2.contourArea)
-            area = cv2.contourArea(largest_contour)
+    # Create a mask
+    mask = cv2.inRange(hsv, lower_orange, upper_orange)
 
-            if area > 100:  # Ignore tiny specks
-                x, y, w, h = cv2.boundingRect(largest_contour)
-                # Draw bounding box around the ball
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    # Find contours
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-                # Also draw a center point
-                cx = x + w//2
-                cy = y + h//2
-                cv2.circle(frame, (cx, cy), 5, (255, 0, 0), -1)
+    if contours:
+        largest_contour = max(contours, key=cv2.contourArea)
+        area = cv2.contourArea(largest_contour)
 
-        # Show both frames
-        cv2.imshow('Original + Detection', frame)
-        cv2.imshow('Mask', mask)
+        if area > 100:
+            print("Orange ball detected! Moving forward.")
+            send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.on(30,30)'")
+        else:
+            print("No ball detected. Stopping.")
+            send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
+    else:
+        print("No ball detected. Stopping.")
+        send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
 
-        # Quit on 'q'
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    # Show camera feed
+    cv2.imshow('Camera', frame)
+    cv2.imshow('Mask', mask)
 
-    cap.release()
-    cv2.destroyAllWindows()
+    # Quit on 'q'
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-if __name__ == "__main__":
-    main()
+# Cleanup
+cap.release()
+cv2.destroyAllWindows()
+send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
