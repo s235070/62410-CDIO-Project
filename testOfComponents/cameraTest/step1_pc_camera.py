@@ -8,7 +8,7 @@ EV3_USER = "robot"
 
 def send_ev3_command(command):
     """Send a shell command to the EV3 via SSH"""
-    os.system(f"ssh {EV3_USER}@{EV3_IP} '{command}'")
+    os.system(f'ssh {EV3_USER}@{EV3_IP} "python3 -c \\"{command}\\""')
 
 # Open PC camera
 cap = cv2.VideoCapture(0)
@@ -42,17 +42,20 @@ while True:
 
         if area > 100:
             print("Orange ball detected! Moving forward.")
-            send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.on(30,30)'")
+            send_ev3_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.on(30,30)")
         else:
             print("No ball detected. Stopping.")
-            send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
+            send_ev3_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()")
     else:
         print("No ball detected. Stopping.")
-        send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
+        send_ev3_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()")
 
     # Show camera feed
     cv2.imshow('Camera', frame)
     cv2.imshow('Mask', mask)
+
+    # Prevent freezing
+    cv2.waitKey(1)
 
     # Quit on 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -61,4 +64,4 @@ while True:
 # Cleanup
 cap.release()
 cv2.destroyAllWindows()
-send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
+send_ev3_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()")
