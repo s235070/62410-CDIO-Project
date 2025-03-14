@@ -7,8 +7,10 @@ EV3_IP = "172.20.10.8"
 EV3_USER = "robot"
 
 def send_ev3_command(command):
-    """Send a shell command to the EV3 via SSH"""
-    os.system(f'ssh {EV3_USER}@{EV3_IP} "python3 -c \\"{command}\\""')
+    """Send a shell command to the EV3 via SSH (properly escaped)"""
+    full_command = f'ssh {EV3_USER}@{EV3_IP} "python3 -c \'{command}\'"'
+    print(f"Executing SSH Command: {full_command}")  # Debug print
+    os.system(full_command)
 
 # Open PC camera
 cap = cv2.VideoCapture(0)
