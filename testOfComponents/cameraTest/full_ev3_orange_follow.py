@@ -2,17 +2,18 @@ import cv2
 import numpy as np
 import subprocess
 import time
+import matplotlib.pyplot as plt
 
 # CONFIGURATION
-EV3_IP = "172.20.10.8"  # Change this to your EV3 IP
+EV3_IP = "172.20.10.8"
 REMOTE_SCRIPT = "/home/robot/62410-CDIO-Project/testOfComponents/cameraTest/move_robot.py"
-CAMERA_INDEX = 1  # Camera index (1 for USB camera)
-LOWER_ORANGE = np.array([10, 100, 100])  # Lower HSV for orange detection
-UPPER_ORANGE = np.array([25, 255, 255])  # Upper HSV for orange detection
-AREA_CLOSE_THRESHOLD = 2000  # Minimum area to consider as a "close" ball
+CAMERA_INDEX = 1
+LOWER_ORANGE = np.array([10, 100, 100])
+UPPER_ORANGE = np.array([25, 255, 255])
+AREA_CLOSE_THRESHOLD = 2000
 LEFT_BOUND_RATIO = 0.4
 RIGHT_BOUND_RATIO = 0.6
-LOOP_DELAY = 0.1  # Loop delay (0.1s = 10 times/sec)
+LOOP_DELAY = 0.1
 
 def send_command(cmd):
     """Send commands to EV3 via SSH."""
@@ -77,9 +78,11 @@ def main():
         else:
             send_command("stop")
 
-        # Show frames
-        cv2.imshow('Frame', frame)
-        cv2.imshow('Mask', mask)
+        # Show frames using matplotlib (instead of cv2.imshow)
+        plt.imshow(frame)
+        plt.title("Frame")
+        plt.axis("off")  # Hide axes
+        plt.show()
 
         # Exit on 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
