@@ -18,16 +18,16 @@ def send_command(cmd):
     """Send commands to EV3 via SSH."""
     try:
         subprocess.run([
-            "ssh", f"robot@{EV3_IP}",
+            "ssh", "robot@{}".format(EV3_IP),
             "python3", REMOTE_SCRIPT, cmd
         ], check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error sending command '{cmd}' to EV3: {e}")
+        print("Error sending command '{}' to EV3: {}".format(cmd, e))
 
 def main():
     cap = cv2.VideoCapture(CAMERA_INDEX)
     if not cap.isOpened():
-        print(f"Cannot open camera at index {CAMERA_INDEX}")
+        print("Cannot open camera at index {}".format(CAMERA_INDEX))
         return
 
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -56,7 +56,7 @@ def main():
                 # Draw bounding box and center point
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 cv2.circle(frame, (cx, cy), 5, (255, 0, 0), -1)
-                cv2.putText(frame, f"Area:{area}", (x, y-10),
+                cv2.putText(frame, "Area:{}".format(area), (x, y-10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
 
                 # Decide movement command based on ball's area and position
