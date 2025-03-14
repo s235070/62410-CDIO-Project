@@ -1,12 +1,16 @@
 import cv2
 import numpy as np
-from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C
-from time import sleep
+import os
 
-# Initialize EV3 motors on ports B & C
-tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
+# EV3 SSH details
+EV3_IP = "172.20.10.8"
+EV3_USER = "robot"
 
-# Open PC camera (change to 1 if needed)
+def send_ev3_command(command):
+    """Send a shell command to the EV3 via SSH"""
+    os.system(f"ssh {EV3_USER}@{EV3_IP} '{command}'")
+
+# Open PC camera
 cap = cv2.VideoCapture(0)
 
 if not cap.isOpened():
@@ -22,7 +26,7 @@ while True:
     # Convert frame to HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # Define orange color range (adjust if needed)
+    # Define orange color range
     lower_orange = np.array([10, 100, 100])
     upper_orange = np.array([25, 255, 255])
 
@@ -36,17 +40,17 @@ while True:
         largest_contour = max(contours, key=cv2.contourArea)
         area = cv2.contourArea(largest_contour)
 
-        if area > 100:  # Only respond to significant objects
+        if area > 100:
             print("Orange ball detected! Moving forward.")
-            tank_drive.on(left_speed=30, right_speed=30)
+            send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.on(30,30)'")
         else:
             print("No ball detected. Stopping.")
-            tank_drive.off()
+            send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
     else:
         print("No ball detected. Stopping.")
-        tank_drive.off()
+        send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
 
-    # Show camera feed (optional)
+    # Show camera feed
     cv2.imshow('Camera', frame)
     cv2.imshow('Mask', mask)
 
@@ -57,4 +61,4 @@ while True:
 # Cleanup
 cap.release()
 cv2.destroyAllWindows()
-tank_drive.off()
+send_ev3_command("python3 -c 'from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()'")
