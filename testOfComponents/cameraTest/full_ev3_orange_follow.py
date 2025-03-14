@@ -6,7 +6,7 @@ import time
 # Configuration - Adjust for your setup
 EV3_IP = "172.20.10.8"  # Change to your EV3 IP
 REMOTE_SCRIPT = "/home/robot/62410-CDIO-Project/testOfComponents/cameraTest/move_robot.py"  # Path to your move_robot.py on EV3
-CAMERA_INDEX = 1  # Adjust based on your setup (0 = built-in camera, 1 = USB camera, etc.)
+CAMERA_INDEX = 0  # Adjust based on your setup (0 = built-in camera, 1 = USB camera, etc.)
 
 # HSV range for detecting orange
 LOWER_ORANGE = np.array([10, 100, 100])
