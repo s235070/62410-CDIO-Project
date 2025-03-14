@@ -1,25 +1,83 @@
 import cv2
 import numpy as np
-import os
+import paramiko
+import threading
+import time
 
-# EV3 SSH detaljer
-EV3_IP = "172.20.10.8"  # SKAL ændres, hvis IP'en skifter
+# EV3 SSH details
+EV3_IP = "172.20.10.8"
 EV3_USER = "robot"
 
-def send_ev3_command(command):
-    """Sender en kommando til EV3 via SSH uden at bede om adgangskode"""
-    full_command = f'ssh -o StrictHostKeyChecking=no {EV3_USER}@{EV3_IP} "python3 -c \'{command}\'"'
-    print(f"Udfører SSH kommando: {full_command}")  # Debug print
-    os.system(full_command)
+class EV3SSH:
+    """Manages a persistent SSH connection to EV3 for real-time execution."""
+    def __init__(self, ip, user):
+        self.ip = ip
+        self.user = user
+        self.client = None
+        self.ev3_is_moving = False  # Keep track of motor state
+        self.lock = threading.Lock()  # Prevent SSH command conflicts
+        self.last_command_time = 0  # Prevent spamming SSH calls
+        self.connect()
 
-# Åbn kamera interface 1 (ingen fallback til kamera 0)
+    def connect(self):
+        """Establish a persistent SSH connection."""
+        try:
+            self.client = paramiko.SSHClient()
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.client.connect(self.ip, username=self.user)
+            print("[INFO] Connected to EV3!")
+        except Exception as e:
+            print(f"[ERROR] SSH Connection Failed: {e}")
+
+    def send_command(self, command, force=False):
+        """Send an EV3 motor command with minimal delay and prevent spamming."""
+        current_time = time.time()
+        if not force and current_time - self.last_command_time < 0.1:  # Limit command spam
+            return
+        
+        self.last_command_time = current_time
+
+        def ssh_task():
+            with self.lock:  # Prevent multiple threads from interfering
+                try:
+                    stdin, stdout, stderr = self.client.exec_command(f'python3 -c \'{command}\'', timeout=0.5)
+                    error = stderr.read().decode()
+                    if error:
+                        print(f"[EV3 ERROR] {error}")
+                except Exception as e:
+                    print(f"[ERROR] SSH Command Failed: {e}")
+
+        threading.Thread(target=ssh_task, daemon=True).start()  # Run in a background thread
+
+    def move_forward(self):
+        """Move EV3 forward instantly without lag."""
+        if not self.ev3_is_moving:
+            print("🔥 Moving forward!")
+            self.send_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.on(30,30)")
+            self.ev3_is_moving = True
+
+    def stop(self):
+        """Stop EV3 instantly without lag."""
+        if self.ev3_is_moving:
+            print("🛑 Stopping robot!")
+            self.send_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()")
+            self.ev3_is_moving = False
+
+    def close(self):
+        """Close SSH connection."""
+        self.send_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()", force=True)
+        if self.client:
+            self.client.close()
+            print("[INFO] SSH Connection Closed.")
+
+# Initialize persistent SSH connection
+ev3 = EV3SSH(EV3_IP, EV3_USER)
+
+# Open camera interface 1
 cap = cv2.VideoCapture(1)
 if not cap.isOpened():
     print("Fejl: Kamera 1 kunne ikke åbnes! Sørg for, at det er tilsluttet.")
     exit()
-
-# Variabel til at tracke EV3's bevægelse
-ev3_is_moving = False
 
 while True:
     ret, frame = cap.read()
@@ -27,17 +85,17 @@ while True:
         print("Kan ikke modtage frame fra kamera 1. Afslutter...")
         break
 
-    # Konverter billede til HSV
+    # Convert frame to HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # Definer farveområde for orange
+    # Define orange color range
     lower_orange = np.array([10, 100, 100])
     upper_orange = np.array([25, 255, 255])
 
-    # Skab en maske
+    # Create a mask
     mask = cv2.inRange(hsv, lower_orange, upper_orange)
 
-    # Find konturer
+    # Find contours
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     ball_detected = False
@@ -48,29 +106,24 @@ while True:
         if area > 100:
             ball_detected = True
 
-    # Kun send SSH-kommando hvis tilstanden ændrer sig
-    if ball_detected and not ev3_is_moving:
-        print("Orange bold opdaget! Robot bevæger sig fremad.")
-        send_ev3_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.on(30,30)")
-        ev3_is_moving = True
+    # Only send commands if necessary
+    if ball_detected:
+        ev3.move_forward()
+    else:
+        ev3.stop()
 
-    elif not ball_detected and ev3_is_moving:
-        print("Ingen bold opdaget. Stopper.")
-        send_ev3_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()")
-        ev3_is_moving = False
-
-    # Vis kamera-feed
+    # Show camera feed
     cv2.imshow('Kamera', frame)
     cv2.imshow('Maske', mask)
 
-    # Forhindrer frysning
+    # Prevent freezing
     cv2.waitKey(1)
 
-    # Afslut ved at trykke 'q'
+    # Quit on 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Ryd op og luk ned
+# Cleanup
 cap.release()
 cv2.destroyAllWindows()
-send_ev3_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()")
+ev3.close()
