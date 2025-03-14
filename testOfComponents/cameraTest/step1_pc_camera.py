@@ -1,58 +1,60 @@
 import cv2
 import numpy as np
+from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C
+from time import sleep
 
-def main():
-    # Open your USB camera (likely index 1)
-    cap = cv2.VideoCapture(0)
+# Initialize EV3 motors on ports B & C
+tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
 
-    if not cap.isOpened():
-        print("Cannot open camera on index 1.")
-        return
+# Open PC camera (change to 1 if needed)
+cap = cv2.VideoCapture(0)
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Can't receive frame. Exiting...")
-            break
+if not cap.isOpened():
+    print("Cannot open camera.")
+    exit()
 
-        # Convert to HSV
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Can't receive frame. Exiting...")
+        break
 
-        # Define HSV range for orange (adjust if needed)
-        lower_orange = np.array([10, 100, 100])
-        upper_orange = np.array([25, 255, 255])
+    # Convert frame to HSV
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Make a mask
-        mask = cv2.inRange(hsv, lower_orange, upper_orange)
+    # Define orange color range (adjust if needed)
+    lower_orange = np.array([10, 100, 100])
+    upper_orange = np.array([25, 255, 255])
 
-        # Find contours in the mask
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Create a mask
+    mask = cv2.inRange(hsv, lower_orange, upper_orange)
 
-        if contours:
-            # Largest contour by area
-            largest_contour = max(contours, key=cv2.contourArea)
-            area = cv2.contourArea(largest_contour)
+    # Find contours
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            if area > 100:  # Ignore tiny specks
-                x, y, w, h = cv2.boundingRect(largest_contour)
-                # Draw bounding box around the ball
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    if contours:
+        largest_contour = max(contours, key=cv2.contourArea)
+        area = cv2.contourArea(largest_contour)
 
-                # Also draw a center point
-                cx = x + w//2
-                cy = y + h//2
-                cv2.circle(frame, (cx, cy), 5, (255, 0, 0), -1)
+        if area > 100:  # Only respond to significant objects
+            print("Orange ball detected! Moving forward.")
+            tank_drive.on(left_speed=30, right_speed=30)
+        else:
+            print("No ball detected. Stopping.")
+            tank_drive.off()
+    else:
+        print("No ball detected. Stopping.")
+        tank_drive.off()
 
-        # Show both frames
-        cv2.imshow('Original + Detection', frame)
-        cv2.imshow('Mask', mask)
+    # Show camera feed (optional)
+    cv2.imshow('Camera', frame)
+    cv2.imshow('Mask', mask)
 
-        # Quit on 'q'
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    # Quit on 'q'
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-    cap.release()
-    cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    main()
+# Cleanup
+cap.release()
+cv2.destroyAllWindows()
+tank_drive.off()
