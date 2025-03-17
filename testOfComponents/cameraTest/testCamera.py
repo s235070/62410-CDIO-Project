@@ -26,7 +26,8 @@ class EV3SSH:
             self.client.connect(self.ip, username=self.user)
             print("[INFO] Connected to EV3!")
         except Exception as e:
-           print(f"[ERROR] SSH Connection Failed: {e}")
+           print("[ERROR] SSH Connection Failed:", e)
+
 
     def send_command(self, command):
         """Write motor commands to the EV3 control file for instant execution."""
