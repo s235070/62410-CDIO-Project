@@ -6,7 +6,7 @@ import threading
 import time
 
 # EV3 SSH details
-EV3_IP = "192.168.137.115"
+EV3_IP = "172.20.10.8"
 EV3_USER = "robot"
 
 class EV3SSH:
