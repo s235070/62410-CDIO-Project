@@ -26,28 +26,27 @@ class EV3SSH:
             self.client.connect(self.ip, username=self.user)
             print("[INFO] Connected to EV3!")
         except Exception as e:
-           print("[ERROR] SSH Connection Failed:", e)
-
+            print("[ERROR] SSH Connection Failed:", e)
 
     def send_command(self, command):
         """Write motor commands to the EV3 control file for instant execution."""
         with self.lock:
             try:
-              self.client.exec_command('echo {} > /home/robot/motor_command.txt'.format(command))
+                self.client.exec_command("echo {} > /home/robot/motor_command.txt".format(command))
             except Exception as e:
-                print(f"[ERROR] SSH Command Failed: {e}")
+                print("[ERROR] SSH Command Failed:", e)
 
     def move_forward(self):
         """Move EV3 forward instantly without lag."""
         if not self.ev3_is_moving:
-            print("🔥 Moving forward!")
+            print("Moving forward!")
             self.send_command("FORWARD")
             self.ev3_is_moving = True
 
     def stop(self):
         """Stop EV3 instantly without lag."""
         if self.ev3_is_moving:
-            print("🛑 Stopping robot!")
+            print("Stopping robot!")
             self.send_command("STOP")
             self.ev3_is_moving = False
 
