@@ -6,7 +6,7 @@ import threading
 import time
 
 # EV3 SSH details
-EV3_IP = "172.20.10.6"
+EV3_IP = "172.20.10.8"
 EV3_USER = "robot"
 
 class EV3SSH:
@@ -62,7 +62,7 @@ class EV3SSH:
 ev3 = EV3SSH(EV3_IP, EV3_USER)
 
 # Open camera interface 1
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 if not cap.isOpened():
     print("Fejl: Kamera 1 kunne ikke åbnes! Sørg for, at det er tilsluttet.")
     exit()
@@ -103,8 +103,6 @@ while True:
     # Show camera feed
     cv2.imshow('Kamera', frame)
     cv2.imshow('Maske', mask)
-    cv2.imshow('Maske', hsv)
-    cv2.imshow('Maske', contours)
 
 
 
