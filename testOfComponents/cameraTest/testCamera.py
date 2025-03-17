@@ -5,7 +5,7 @@ import threading
 import time
 
 # EV3 SSH details
-EV3_IP = "172.20.10.8"
+EV3_IP = "192.168.137.115"
 EV3_USER = "robot"
 
 class EV3SSH:
@@ -14,9 +14,8 @@ class EV3SSH:
         self.ip = ip
         self.user = user
         self.client = None
-        self.ev3_is_moving = False  # Keep track of motor state
+        self.ev3_is_moving = False  # Track motor state to avoid duplicate commands
         self.lock = threading.Lock()  # Prevent SSH command conflicts
-        self.last_command_time = 0  # Prevent spamming SSH calls
         self.connect()
 
     def connect(self):
@@ -27,45 +26,33 @@ class EV3SSH:
             self.client.connect(self.ip, username=self.user)
             print("[INFO] Connected to EV3!")
         except Exception as e:
-            print(f"[ERROR] SSH Connection Failed: {e}")
+           print(f"[ERROR] SSH Connection Failed: {e}")
 
-    def send_command(self, command, force=False):
-        """Send an EV3 motor command with minimal delay and prevent spamming."""
-        current_time = time.time()
-        if not force and current_time - self.last_command_time < 0.1:  # Limit command spam
-            return
-        
-        self.last_command_time = current_time
-
-        def ssh_task():
-            with self.lock:  # Prevent multiple threads from interfering
-                try:
-                    stdin, stdout, stderr = self.client.exec_command(f'python3 -c \'{command}\'', timeout=0.5)
-                    error = stderr.read().decode()
-                    if error:
-                        print(f"[EV3 ERROR] {error}")
-                except Exception as e:
-                    print(f"[ERROR] SSH Command Failed: {e}")
-
-        threading.Thread(target=ssh_task, daemon=True).start()  # Run in a background thread
+    def send_command(self, command):
+        """Write motor commands to the EV3 control file for instant execution."""
+        with self.lock:
+            try:
+                self.client.exec_command(f'echo {command} > /home/robot/motor_command.txt')
+            except Exception as e:
+                print(f"[ERROR] SSH Command Failed: {e}")
 
     def move_forward(self):
         """Move EV3 forward instantly without lag."""
         if not self.ev3_is_moving:
             print("🔥 Moving forward!")
-            self.send_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.on(30,30)")
+            self.send_command("FORWARD")
             self.ev3_is_moving = True
 
     def stop(self):
         """Stop EV3 instantly without lag."""
         if self.ev3_is_moving:
             print("🛑 Stopping robot!")
-            self.send_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()")
+            self.send_command("STOP")
             self.ev3_is_moving = False
 
     def close(self):
         """Close SSH connection."""
-        self.send_command("from ev3dev2.motor import MoveTank, OUTPUT_B, OUTPUT_C; tank=MoveTank(OUTPUT_B, OUTPUT_C); tank.off()", force=True)
+        self.send_command("STOP")
         if self.client:
             self.client.close()
             print("[INFO] SSH Connection Closed.")
