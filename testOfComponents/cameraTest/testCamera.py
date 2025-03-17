@@ -33,7 +33,7 @@ class EV3SSH:
         """Write motor commands to the EV3 control file for instant execution."""
         with self.lock:
             try:
-                self.client.exec_command(f'echo {command} > /home/robot/motor_command.txt')
+              self.client.exec_command('echo {} > /home/robot/motor_command.txt'.format(command))
             except Exception as e:
                 print(f"[ERROR] SSH Command Failed: {e}")
 
