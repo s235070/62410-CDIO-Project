@@ -186,4 +186,9 @@ Press Q to quit.
         # Restore terminal settings and stop motors
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         tank_drive.off()
+        medium_motor_c.off()
+        medium_motor_b.off()
+        print("Exiting. All motors stopped.")
 
+if __name__ == "__main__":
+    main()
