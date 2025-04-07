@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.log
+*.mp4
+camera_profiles/*.npy
+.vscode/
+.env
+.venv/
