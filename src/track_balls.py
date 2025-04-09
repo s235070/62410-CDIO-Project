@@ -7,7 +7,7 @@ def detect_color_ball(frame, hsv_img, lower, upper, color_name):
     mask = cv2.inRange(hsv_img, lower, upper)
 
     # ROI: symmetric 30px margin all around
-    margin = 20
+    margin = 15
     roi_mask = np.zeros_like(mask)
     cv2.rectangle(roi_mask, (margin, margin), (WARP_WIDTH - margin, WARP_HEIGHT - margin), 255, -1)
     mask = cv2.bitwise_and(mask, roi_mask)
