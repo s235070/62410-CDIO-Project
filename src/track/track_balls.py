@@ -2,13 +2,16 @@ import cv2
 import numpy as np
 import math
 
+from config import WARP_WIDTH, WARP_HEIGHT
+
+
 # Constants
-MIN_RADIUS = 3
+MIN_RADIUS = 0
 MAX_RADIUS = 25
 CIRCULARITY_THRESHOLD = 0.75
 ROBOT_AVOID_RADIUS = 40
-IMAGE_EDGE_MARGIN = 12
-ARENA_EDGE_MARGIN = 0.07
+IMAGE_EDGE_MARGIN = 6
+ARENA_EDGE_MARGIN = 0.0
 
 # Kernels
 kernel7 = np.ones((7, 7), np.uint8)
@@ -27,6 +30,19 @@ COLOR_CONFIG = {
     "orange": {"open": kernel7, "close": kernel7, "circularity": True},
     "yellow": {"open": kernel7, "close": None, "circularity": True}
 }
+
+def create_arena_mask(shape):
+    mask = np.zeros(shape[:2], dtype=np.uint8)
+    polygon = np.array([
+        [0, 0],
+        [WARP_WIDTH - 1, 0],
+        [WARP_WIDTH - 1, WARP_HEIGHT - 1],
+        [0, WARP_HEIGHT - 1]
+    ])
+    cv2.fillPoly(mask, [polygon], 255)
+    return mask
+
+
 
 def process_color(hsv_img, lower, upper, open_kernel, close_kernel):
     mask = cv2.inRange(hsv_img, lower, upper)
@@ -66,7 +82,9 @@ def detect_balls(frame, hsv_img, H, ev3_pos_arena, image_to_arena_coords, robot_
     for color, (lower, upper) in COLOR_RANGES.items():
         cfg = COLOR_CONFIG[color]
         mask = process_color(hsv_img, lower, upper, cfg["open"], cfg["close"])
-        
+        arena_mask = create_arena_mask(hsv_img.shape)
+        mask = cv2.bitwise_and(mask, mask, mask=arena_mask)
+
         # Mask robot areas
         for pos in [robot_front, robot_pos]:
             if pos is not None:
@@ -95,4 +113,8 @@ def detect_balls(frame, hsv_img, H, ev3_pos_arena, image_to_arena_coords, robot_
         default=None
     )
     
+    # DEBUG: Vis maskerne som separate vinduer
+    for color, mask in masks.items():
+        cv2.imshow(f"{color.title()} Mask", mask)
+
     return detected, nearest

@@ -16,6 +16,7 @@ from track.track_wall import (
     image_to_arena_coords,
     arena_to_image,
     draw_wall_and_grid
+    
 )
 
 def main():
@@ -82,6 +83,7 @@ def main():
             ev3_front = robot_front
             ev3_pos_arena = image_to_arena_coords(ev3_pos, H)
             ev3_front_arena = image_to_arena_coords(ev3_front, H)
+        
 
             # 🔎 Find og tegn alle bolde
             all_balls, nearest = detect_balls(
