@@ -83,11 +83,31 @@ def main():
             ev3_pos_arena = image_to_arena_coords(ev3_pos, H)
             ev3_front_arena = image_to_arena_coords(ev3_front, H)
 
-            result = detect_balls(warped, hsv, H, ev3_pos_arena, image_to_arena_coords)
-            if result:
-                ball_screen, ball_arena = result
-                dx = ball_arena[0] - ev3_pos_arena[0]
-                dy = ball_arena[1] - ev3_pos_arena[1]
+            # 🔎 Find og tegn alle bolde
+            all_balls, nearest = detect_balls(
+                warped, hsv, H, ev3_pos_arena, image_to_arena_coords
+            )
+
+            
+
+            for arena_pos, color, screen_pos in all_balls:
+                color_bgr = (255, 255, 255) if color == "white" else (0, 165, 255) if color == "orange" else (0, 255, 255)
+                cv2.circle(warped, screen_pos, 8, color_bgr, 2)
+                cv2.putText(
+                    warped,
+                    f"{color.title()} ({arena_pos[0]:.2f},{arena_pos[1]:.2f})",
+                    (screen_pos[0] + 5, screen_pos[1] - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    color_bgr,
+                    1
+                )
+
+            # 🟡 Tegn pil til nærmeste bold
+            if nearest:
+                arena_pos, color, screen_pos = nearest
+                dx = arena_pos[0] - ev3_pos_arena[0]
+                dy = arena_pos[1] - ev3_pos_arena[1]
                 target_vec = np.array([dx, dy])
                 front_vec = np.array(ev3_front_arena) - np.array(ev3_pos_arena)
 
@@ -97,17 +117,17 @@ def main():
                 ))
                 distance = np.linalg.norm(target_vec)
 
-                cv2.circle(warped, ball_screen, 8, (0, 255, 255), -1)
-                cv2.arrowedLine(warped, robot_front, ball_screen, (0, 255, 255), 2)
+                cv2.arrowedLine(warped, robot_front, screen_pos, (0, 255, 255), 2)
 
-            # Draw robot
+            # 🟢 Tegn EV3 robot
             cv2.circle(warped, robot_front, 8, (0, 255, 0), -1)
             cv2.circle(warped, robot_back, 8, (255, 255, 0), -1)
             cv2.putText(warped, "EV3", (robot_front[0] + 10, robot_front[1]),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
+        # FPS visning
         fps = 1.0 / (time.time() - start_time)
-        cv2.putText(warped, "FPS: {:.1f}".format(fps), (10, 20),
+        cv2.putText(warped, f"FPS: {fps:.1f}", (10, 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
         cv2.imshow("EV3 Tracking", warped)
 
@@ -116,6 +136,7 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()

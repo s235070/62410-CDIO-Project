@@ -33,12 +33,13 @@ def arena_to_image(pt, H):
 
 def draw_wall_and_grid(frame, contours, H):
     for cnt in contours:
-        cv2.drawContours(frame, [cnt], -1, (0, 140, 255), 3)
+        cv2.drawContours(frame, [cnt], -1, (200, 0, 200), 3)  # purple
         corners = get_extreme_corners(cnt)
         for i, corner in enumerate(corners):
-            cv2.circle(frame, corner, 8, (0, 255, 255), -1)
+            cv2.circle(frame, corner, 8, (200, 0, 200), -1)
             cv2.putText(frame, "C{}".format(i+1), (corner[0] + 10, corner[1] - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 0, 200), 2)
+
         center_px = np.mean(np.array(corners), axis=0).astype(int)
         cv2.circle(frame, tuple(center_px), 6, (255, 255, 0), -1)
         cv2.putText(frame, "(0,0)", (center_px[0] + 10, center_px[1]),
