@@ -3,7 +3,7 @@ __pycache__/
 *.pyo
 *.log
 *.mp4
-# camera_profiles/*.npy
+camera_profiles/*.npy
 .vscode/
 .env
 .venv/
