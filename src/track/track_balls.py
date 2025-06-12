@@ -1,12 +1,17 @@
 from ultralytics import YOLO
 from pathlib import Path
+import torch
 import cv2
 
-# Indlæs den trænet model én gang
+# 🎯 Load YOLOv8 model
 MODEL_PATH = Path(__file__).parent.parent / "models" / "best.pt"
 model = YOLO(str(MODEL_PATH))
 
-# Farver til boldtyper
+# 💻 Bestem device: GPU hvis muligt, ellers CPU
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"[INFO] YOLO model using device: {device}")
+
+# 🟡 Boldtyper og farver
 COLOR_BGR = {
     "white_ball": (255, 255, 255),
     "orange_ball": (0, 165, 255),
@@ -18,7 +23,25 @@ def detect_balls_yolo(frame):
     Detekterer bolde i billedet vha. YOLOv8-model.
     Returnerer liste over (label, (x, y))-positioner.
     """
-    results = model.predict(frame, conf=0.4, iou=0.3, verbose=False)
+    try:
+        results = model.predict(
+            frame,
+            conf=0.4,
+            iou=0.3,
+            verbose=False,
+            device=device
+        )
+    except Exception as e:
+        print(f"[WARN] GPU detection failed: {e}")
+        print("[INFO] Switching to CPU")
+        results = model.predict(
+            frame,
+            conf=0.4,
+            iou=0.3,
+            verbose=False,
+            device='cpu'
+        )
+
     detections = []
 
     for r in results:
