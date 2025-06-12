@@ -4,7 +4,7 @@ from config import CAMERA_INDEX, WARP_WIDTH, WARP_HEIGHT
 from utils.vision import warp_image
 from track.input_handler import ask_for_label, load_matrix
 from track.track_arena import select_detection_zone, create_manual_mask
-from track.track_balls import detect_balls
+from track.track_balls import detect_balls_yolo, COLOR_BGR
 
 def main():
     # 📁 Load kalibreringsmatrix
@@ -44,16 +44,13 @@ def main():
             continue
 
         warped = warp_image(frame, matrix, WARP_WIDTH, WARP_HEIGHT)
-        hsv = cv2.cvtColor(warped, cv2.COLOR_BGR2HSV)
 
-        # 🎯 Bold-detektion
-        balls = detect_balls(warped, hsv, arena_mask)
+        # 🎯 Bold-detektion via YOLO
+        balls = detect_balls_yolo(warped)
 
         # 🟢 Vis bolde i Arena View
-        for _, color, (x, y) in balls:
-            color_bgr = (255, 255, 255) if color == "white" else \
-                        (0, 165, 255) if color == "orange" else \
-                        (0, 255, 255)
+        for label, (x, y) in balls:
+            color_bgr = COLOR_BGR.get(label, (200, 200, 200))  # fallback
             cv2.circle(warped, (x, y), 10, color_bgr, 2)
 
         # 🔲 Tegn polygon (valgfrit)

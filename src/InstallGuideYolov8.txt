@@ -1,0 +1,5 @@
+conda create -n ballenv python=3.10 -y
+conda activate ballenv
+pip install -r requirements.txt
+cd src/
+python track.py
