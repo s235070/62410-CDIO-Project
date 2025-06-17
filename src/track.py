@@ -54,7 +54,7 @@ def main():
             color = COLOR_BGR.get(label, (200, 200, 200))
             cv2.circle(warped, (x, y), 10, color, 2)
 
-        front, back = detect_ev3(warped)
+        front, back, left, right, center = detect_ev3(warped)
         if front and back:
             cv2.circle(warped, front, 8, (0, 255, 0), 2)
             cv2.circle(warped, back, 8, (255, 0, 0), 2)

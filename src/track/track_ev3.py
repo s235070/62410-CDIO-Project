@@ -1,62 +1,43 @@
 import cv2
+import cv2.aruco as aruco
 import numpy as np
-import math
 
-# 🎨 Grøn farveområde i HSV
-green_lower = np.array([40, 40, 40])
-green_upper = np.array([90, 255, 255])
+# === Indlæs kalibreringsdata ===
+data = np.load("calibration_data/camera_calibration.npz")
+camera_matrix = data["camera_matrix"]
+dist_coeffs = data["dist_coeffs"]
 
-# Kernel til støjfjerning
-kernel = np.ones((5, 5), np.uint8)
-
-def circularity(cnt):
-    """
-    Returnerer hvor cirkulær en kontur er.
-    Værdi tæt på 1 = perfekt cirkel.
-    """
-    area = cv2.contourArea(cnt)
-    perimeter = cv2.arcLength(cnt, True)
-    if perimeter == 0:
-        return 0
-    return 4 * np.pi * area / (perimeter ** 2)
+# === ArUco konfiguration ===
+ARUCO_DICT = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
+PARAMETERS = aruco.DetectorParameters()
+MARKER_LENGTH = 0.05  # længde i meter (fx 5 cm tag)
 
 def detect_ev3(frame):
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, green_lower, green_upper)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    corners, ids, _ = aruco.detectMarkers(gray, ARUCO_DICT, parameters=PARAMETERS)
 
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    valid = []
+    if ids is not None and len(corners) > 0:
+        rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(corners, MARKER_LENGTH, camera_matrix, dist_coeffs)
 
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area < 100 or area > 5000:
-            continue
-        M = cv2.moments(cnt)
-        if M["m00"] == 0:
-            continue
-        cx = int(M["m10"] / M["m00"])
-        cy = int(M["m01"] / M["m00"])
-        circ = circularity(cnt)
-        valid.append({'cnt': cnt, 'center': (cx, cy), 'circ': circ})
+        center = np.mean(corners[0][0], axis=0)
+        rvec = rvecs[0][0]
+        rotation_matrix, _ = cv2.Rodrigues(rvec)
 
-    best_pair = None
-    best_distance = float('inf')
+        # Retningsvektorer
+        forward = rotation_matrix[:, 0]
+        backward = -forward
+        left = rotation_matrix[:, 1]
+        right = -left
 
-    for i in range(len(valid)):
-        for j in range(i + 1, len(valid)):
-            pt1 = valid[i]['center']
-            pt2 = valid[j]['center']
-            dist = np.linalg.norm(np.array(pt1) - np.array(pt2))
-            if dist < 100 and dist < best_distance:
-                best_distance = dist
-                best_pair = (valid[i], valid[j])
+        def to_pixel(vec):
+            return (int(center[0] + 30 * vec[0]), int(center[1] + 30 * vec[1]))
 
-    if best_pair:
-        a, b = best_pair
-        front = a['center'] if a['circ'] > b['circ'] else b['center']
-        back  = b['center'] if a['circ'] > b['circ'] else a['center']
-        return front, back
-    else:
-        return None, None
+        front = to_pixel(forward)
+        back = to_pixel(backward)
+        leftpt = to_pixel(left)
+        rightpt = to_pixel(right)
+        center_pt = (int(center[0]), int(center[1]))
 
+        return front, back, leftpt, rightpt, center_pt
+
+    return None, None, None, None, None
