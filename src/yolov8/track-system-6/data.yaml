@@ -1,0 +1,14 @@
+names:
+- ev3
+- orange_ball
+- white_ball
+nc: 3
+roboflow:
+  license: CC BY 4.0
+  project: ball-detection-mobgq
+  url: https://universe.roboflow.com/balldetection-z7gmn/ball-detection-mobgq/dataset/6
+  version: 6
+  workspace: balldetection-z7gmn
+test: ../test/images
+train: ../train/images
+val: ../valid/images
