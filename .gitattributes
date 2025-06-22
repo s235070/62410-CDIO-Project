@@ -1,0 +1,7 @@
+# Konverter automatisk til LF ved commit, men behold CRLF i working directory på Windows
+* text=auto
+
+# Bevar Unix-linjeskift i labels og txt-filer (specielt vigtigt for Roboflow / YOLO-filer)
+*.txt text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
