@@ -1,0 +1,12 @@
+names:
+- ev3
+nc: 1
+roboflow:
+  license: CC BY 4.0
+  project: ev3-ld4mh
+  url: https://universe.roboflow.com/balldetection-z7gmn/ev3-ld4mh/dataset/1
+  version: 1
+  workspace: balldetection-z7gmn
+test: ../test/images
+train: ../train/images
+val: ../valid/images
