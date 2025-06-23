@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import time
 from threading import Thread
 from config import CAMERA_INDEX, WARP_WIDTH, WARP_HEIGHT
 from utils.vision import warp_image
@@ -10,7 +9,7 @@ from track.track_balls import detect_balls_yolo, COLOR_BGR
 from track.track_ev3 import detect_ev3
 from track.track_cross import load_cross_polygon
 from track.track_goal import draw_goals
-from ev3_move import move_towards_ball
+from ev3_move import move_towards_ball, stop_ev3
 from ev3_control import setup_connection
 
 # === THREAD-BASERET KAMERA ===
@@ -42,7 +41,6 @@ class VideoStream:
         self.stream.release()
 
 # === HOVEDPROGRAM ===
-
 def main():
     setup_connection()
 
@@ -69,6 +67,7 @@ def main():
     arena_mask = create_manual_mask(arena_polygon, warped.shape[:2])
     cv2.destroyWindow("Warped Preview")
 
+    # === KØR IGENNEM BILLEDER ===
     while True:
         frame = cap.read()
         warped = warp_image(frame, matrix, WARP_WIDTH, WARP_HEIGHT)
@@ -87,10 +86,14 @@ def main():
                     print(f"[CROSS] Stop tæt på kryds (dist={dist:.1f})")
                     continue
 
-            # === Flyttet alt movement til ekstern fil ===
-            move_towards_ball(front, back, balls)
+            # === Styr robot mod bold ===
+            reached_ball = move_towards_ball(front, back, balls)
+            if reached_ball:
+                print("[TRACK] Bold er nået, stopper loop.")
+                stop_ev3()
+                break
 
-        # === Visualisering ===
+        # === VISUALISERING ===
         for label, (x, y) in balls:
             color = COLOR_BGR.get(label, (200, 200, 200))
             cv2.circle(warped, (x, y), 10, color, 2)

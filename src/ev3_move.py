@@ -1,6 +1,5 @@
 # ev3_move.py
 import numpy as np
-import time
 from ev3_control import send_command
 
 CMD_FORWARD = "python3 move_robot.py forward"
@@ -10,24 +9,27 @@ CMD_STOP = "python3 move_robot.py stop"
 
 last_cmd = None
 command_cooldown = 0
-CMD_DELAY_FRAMES = 2  # Undgå spam
+CMD_DELAY_FRAMES = 2
+has_stopped = False  # ← vigtigt: stopper ALT bagefter
+
+# Du kan justere denne værdi:
+STOP_DISTANCE = 120  # afstand i pixels til bolden, hvor vi stopper
 
 def move_towards_ball(front, back, balls):
-    global last_cmd, command_cooldown
+    global last_cmd, command_cooldown, has_stopped
 
-    if not front or not back or not balls:
-        return
+    if not front or not back or not balls or has_stopped:
+        return True  # Hvis vi allerede har stoppet → afslut
 
+    # Robotens center = midt mellem front og bag
     ev3_center = ((front[0] + back[0]) // 2, (front[1] + back[1]) // 2)
-
-    # Beregn vektor
     vx, vy = front[0] - back[0], front[1] - back[1]
 
     # Find nærmeste bold
     nearest = None
     min_dist = float("inf")
     for _, (bx, by) in balls:
-        d = np.hypot(back[0] - bx, back[1] - by)
+        d = np.hypot(back[0] - bx, back[1] - by)  # afstand fra bagenden
         if d < 45:
             continue
         if d < min_dist:
@@ -35,30 +37,42 @@ def move_towards_ball(front, back, balls):
             nearest = (bx, by)
 
     if nearest is None:
-        return
+        return False
 
-    # Vinkelberegning
+    # Bold-retning ift. EV3
     ux, uy = nearest[0] - front[0], nearest[1] - front[1]
     dot = vx * ux + vy * uy
     det = vx * uy - vy * ux
     angle = np.degrees(np.arctan2(det, dot))
 
-    # Bevægelsesvalg
-    cmd = None
+    # === STOPPUNKT ===
+    if min_dist < STOP_DISTANCE:
+        if last_cmd != CMD_STOP:
+            print(f"[STOP] Stopper før bolden (dist={min_dist:.1f}) → {CMD_STOP}")
+            send_command(CMD_STOP)
+            last_cmd = CMD_STOP
+            has_stopped = True
+        return True  # Vi har nået destination
+
+    # === Drej eller kør frem ===
     if abs(angle) > 10:
         cmd = CMD_SPIN_RIGHT if angle > 0 else CMD_SPIN_LEFT
-        print(f"[DREJ] angle={angle:.1f}° → {cmd}")
     else:
-        if min_dist < 40:
-            cmd = CMD_STOP
-        else:
-            cmd = CMD_FORWARD
-        print(f"[KØR] dist={min_dist:.0f} → {cmd}")
+        cmd = CMD_FORWARD
 
-    # Send kommando hvis den er ny eller cooldown er 0
-    if cmd and (cmd != last_cmd or command_cooldown == 0):
+    if cmd != last_cmd or command_cooldown == 0:
+        print(f"[MOVE] angle={angle:.1f}, dist={min_dist:.1f} → {cmd}")
         send_command(cmd)
         last_cmd = cmd
         command_cooldown = CMD_DELAY_FRAMES
     else:
         command_cooldown = max(0, command_cooldown - 1)
+
+    return False  # Vi har ikke ramt bolden endnu
+
+def stop_ev3():
+    global last_cmd, has_stopped
+    send_command(CMD_STOP)
+    last_cmd = CMD_STOP
+    has_stopped = True
+    print("[FORCE STOP] Robotten blev tvunget til at stoppe")
