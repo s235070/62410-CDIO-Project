@@ -7,9 +7,10 @@ from track.input_handler import ask_for_label, load_matrix
 from track.track_arena import select_detection_zone, create_manual_mask
 from track.track_balls import detect_balls_yolo, COLOR_BGR
 from track.track_ev3 import detect_ev3
+from track.track_cross import load_cross_polygon
+from track.track_goal import draw_goals  # 🥅 NYT
 from ev3_control import send_command, setup_connection, CMD_FORWARD, CMD_LEFT, CMD_RIGHT
 
-# Cooldown-styring
 last_cmd = None
 command_cooldown = 0
 CMD_DELAY_FRAMES = 8
@@ -18,14 +19,18 @@ def main():
     global last_cmd, command_cooldown
     setup_connection()
 
-    label = ask_for_label()
+    label = ask_for_label().strip().lower()
     matrix = load_matrix(label)
     if matrix is None:
         return
 
+    cross_poly = load_cross_polygon(label)
+    if cross_poly is None:
+        print("[WARN] No cross polygon found — robot will ignore the cross.")
+
     cap = cv2.VideoCapture(CAMERA_INDEX, cv2.CAP_DSHOW)
     if not cap.isOpened():
-        print("Camera not accessible")
+        print("[ERROR] Camera not accessible")
         return
 
     print("[INFO] Waiting for frame to define detection zone...")
@@ -48,6 +53,8 @@ def main():
             continue
 
         warped = warp_image(frame, matrix, WARP_WIDTH, WARP_HEIGHT)
+        warped = draw_goals(warped)  # 🥅 Tegn mål
+
         balls = detect_balls_yolo(warped)
         front, back, left, right, center = detect_ev3(warped)
 
@@ -56,19 +63,37 @@ def main():
             filtered_balls = []
             for label, (bx, by) in balls:
                 distance = np.hypot(bx - center[0], by - center[1])
-                if distance > 60:  # justér denne tærskel efter behov
+                if distance > 60:
                     filtered_balls.append((label, (bx, by)))
                 else:
                     print(f"[FILTER] Bold for tæt på EV3: {label} ({bx}, {by})")
             balls = filtered_balls
 
-        # === Visualisering af bolde ===
+        # === Tegn kryds hvis det findes ===
+        if cross_poly is not None:
+            cross_poly_int = np.array([cross_poly], dtype=np.int32)
+            cv2.polylines(warped, [cross_poly_int], True, (0, 0, 255), 2)
+            cx, cy = np.mean(cross_poly, axis=0).astype(int)
+            cv2.putText(warped, "CROSS", (cx + 10, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+
         for label, (x, y) in balls:
             color = COLOR_BGR.get(label, (200, 200, 200))
             cv2.circle(warped, (x, y), 10, color, 2)
 
+
         # === EV3 retningsvisualisering og navigation ===
+        front, back, *_ = detect_ev3(warped)
         if front and back:
+            ev3_center = ((front[0] + back[0]) // 2, (front[1] + back[1]) // 2)
+
+            if cross_poly is not None:
+                dist = cv2.pointPolygonTest(cross_poly.astype(np.float32), ev3_center, True)
+                if dist >= 0 or abs(dist) < 25:
+                    print(f"[CROSS] Too close to cross → Stop (distance: {dist:.1f})")
+                    send_command(None)
+                    last_cmd = None
+                    continue
+
             cv2.circle(warped, front, 8, (0, 255, 0), 2)
             cv2.circle(warped, back, 8, (255, 0, 0), 2)
             cv2.line(warped, front, back, (0, 255, 255), 2)
@@ -88,7 +113,6 @@ def main():
 
             if nearest_ball:
                 cv2.line(warped, front, nearest_ball, (0, 255, 255), 2)
-
                 ux, uy = nearest_ball[0] - front[0], nearest_ball[1] - front[1]
                 dot = vx * ux + vy * uy
                 det = vx * uy - vy * ux
@@ -129,6 +153,7 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
