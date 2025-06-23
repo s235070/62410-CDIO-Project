@@ -13,5 +13,5 @@ WARP_WIDTH = 640   # Output resolution of warped image
 WARP_HEIGHT = 480
 
 # ====== EV3 SETTINGS ======
-EV3_IP = "192.168.0.30"
+EV3_IP = "172.20.10.2"
 EV3_USER = "robot"

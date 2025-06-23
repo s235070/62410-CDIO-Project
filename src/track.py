@@ -49,12 +49,25 @@ def main():
 
         warped = warp_image(frame, matrix, WARP_WIDTH, WARP_HEIGHT)
         balls = detect_balls_yolo(warped)
+        front, back, left, right, center = detect_ev3(warped)
 
+        # === Fjern bolde tæt på EV3-center ===
+        if center:
+            filtered_balls = []
+            for label, (bx, by) in balls:
+                distance = np.hypot(bx - center[0], by - center[1])
+                if distance > 60:  # justér denne tærskel efter behov
+                    filtered_balls.append((label, (bx, by)))
+                else:
+                    print(f"[FILTER] Bold for tæt på EV3: {label} ({bx}, {by})")
+            balls = filtered_balls
+
+        # === Visualisering af bolde ===
         for label, (x, y) in balls:
             color = COLOR_BGR.get(label, (200, 200, 200))
             cv2.circle(warped, (x, y), 10, color, 2)
 
-        front, back, left, right, center = detect_ev3(warped)
+        # === EV3 retningsvisualisering og navigation ===
         if front and back:
             cv2.circle(warped, front, 8, (0, 255, 0), 2)
             cv2.circle(warped, back, 8, (255, 0, 0), 2)
@@ -100,15 +113,13 @@ def main():
 
                 if cmd and (cmd != last_cmd or command_cooldown <= 0):
                     send_command(cmd)
-                    time.sleep(0.1)  # ← tilføj denne
+                    time.sleep(0.1)
                     last_cmd = cmd
                     command_cooldown = CMD_DELAY_FRAMES
 
-        # Cooldown reduceres
         if command_cooldown > 0:
             command_cooldown -= 1
 
-        # Visualisering
         cv2.polylines(warped, [arena_polygon], isClosed=True, color=(180, 0, 180), thickness=2)
         cv2.imshow("Arena View", warped)
         cv2.imshow("Arena Mask", arena_mask)
