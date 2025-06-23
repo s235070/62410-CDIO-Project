@@ -11,6 +11,7 @@ from track.track_cross import load_cross_polygon
 from track.track_goal import draw_goals
 from ev3_move import move_towards_ball, stop_ev3
 from ev3_control import setup_connection
+from pickup_ball import pick_up_sequence
 
 # === THREAD-BASERET KAMERA ===
 class VideoStream:
@@ -89,8 +90,9 @@ def main():
             # === Styr robot mod bold ===
             reached_ball = move_towards_ball(front, back, balls)
             if reached_ball:
-                print("[TRACK] Bold er nået, stopper loop.")
+                print("[TRACK] Bold er nået, stopper motor og aktiverer claw.")
                 stop_ev3()
+                pick_up_sequence()
                 break
 
         # === VISUALISERING ===

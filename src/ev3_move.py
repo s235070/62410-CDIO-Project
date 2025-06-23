@@ -13,7 +13,7 @@ CMD_DELAY_FRAMES = 2
 has_stopped = False  # ← vigtigt: stopper ALT bagefter
 
 # Du kan justere denne værdi:
-STOP_DISTANCE = 120  # afstand i pixels til bolden, hvor vi stopper
+STOP_DISTANCE = 140  # afstand i pixels til bolden, hvor vi stopper
 
 def move_towards_ball(front, back, balls):
     global last_cmd, command_cooldown, has_stopped
@@ -30,7 +30,7 @@ def move_towards_ball(front, back, balls):
     min_dist = float("inf")
     for _, (bx, by) in balls:
         d = np.hypot(back[0] - bx, back[1] - by)  # afstand fra bagenden
-        if d < 45:
+        if d < 60:
             continue
         if d < min_dist:
             min_dist = d
