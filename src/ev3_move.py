@@ -1,6 +1,7 @@
 # ev3_move.py
 import numpy as np
 from ev3_control import send_command
+import time
 
 CMD_FORWARD = "python3 move_robot.py forward"
 CMD_SPIN_LEFT = "python3 move_robot.py spin_left"
@@ -14,6 +15,56 @@ has_stopped = False  # ← vigtigt: stopper ALT bagefter
 
 # Du kan justere denne værdi:
 STOP_DISTANCE = 140  # afstand i pixels til bolden, hvor vi stopper
+
+def move_towards_target(front, back, target, stop_distance=50):
+    global last_cmd, command_cooldown
+
+    if not front or not back:
+        return False
+
+    ev3_center = ((front[0] + back[0]) // 2, (front[1] + back[1]) // 2)
+    vx, vy = front[0] - back[0], front[1] - back[1]
+
+    ux, uy = target[0] - front[0], target[1] - front[1]
+    dot = vx * ux + vy * uy
+    det = vx * uy - vy * ux
+    angle = np.degrees(np.arctan2(det, dot))
+    dist = np.hypot(target[0] - ev3_center[0], target[1] - ev3_center[1])
+
+    if dist < stop_distance:
+        if last_cmd != CMD_STOP:
+            print(f"[GOAL-STOP] Tæt nok på mål (dist={dist:.1f}) → {CMD_STOP}")
+            send_command(CMD_STOP)
+            last_cmd = CMD_STOP
+        return True
+
+    if abs(angle) > 10:
+        cmd = CMD_SPIN_RIGHT if angle > 0 else CMD_SPIN_LEFT
+    else:
+        cmd = CMD_FORWARD
+
+    if cmd != last_cmd or command_cooldown == 0:
+        print(f"[GOAL-MOVE] angle={angle:.1f}, dist={dist:.1f} → {cmd}")
+        send_command(cmd)
+        last_cmd = cmd
+        command_cooldown = CMD_DELAY_FRAMES
+    else:
+        command_cooldown = max(0, command_cooldown - 1)
+
+    return False
+
+def go_to_goal(goal_pos, front, back):
+    print("[GOAL] Kører mod mål...")
+    while True:
+        reached = move_towards_target(front, back, goal_pos, stop_distance=50)
+        if reached:
+            print("[GOAL] Ankommet til mål.")
+            break
+        time.sleep(0.1)
+
+def reset_stop_state():
+    global has_stopped
+    has_stopped = False
 
 def move_towards_ball(front, back, balls):
     global last_cmd, command_cooldown, has_stopped

@@ -12,6 +12,8 @@ from track.track_goal import draw_goals
 from ev3_move import move_towards_ball, stop_ev3
 from ev3_control import setup_connection
 from pickup_ball import pick_up_sequence
+from ev3_move import move_towards_ball, stop_ev3, go_to_goal, reset_stop_state  # ← tilføj denne import
+
 
 # === THREAD-BASERET KAMERA ===
 class VideoStream:
@@ -41,10 +43,13 @@ class VideoStream:
         self.stopped = True
         self.stream.release()
 
+
+
 # === HOVEDPROGRAM ===
 def main():
     setup_connection()
-
+    collected_balls = 0
+    MAX_BALLS = 5
     label = ask_for_label().strip().lower()
     matrix = load_matrix(label)
     if matrix is None:
@@ -72,7 +77,7 @@ def main():
     while True:
         frame = cap.read()
         warped = warp_image(frame, matrix, WARP_WIDTH, WARP_HEIGHT)
-        warped = draw_goals(warped)
+        warped, goal_a, goal_b = draw_goals(warped)
 
         balls = detect_balls_yolo(warped)
         front, back, *_ = detect_ev3(warped)
@@ -93,7 +98,15 @@ def main():
                 print("[TRACK] Bold er nået, stopper motor og aktiverer claw.")
                 stop_ev3()
                 pick_up_sequence()
-                break
+                reset_stop_state()  # ← nøglelinje
+
+                collected_balls += 1
+                if collected_balls >= MAX_BALLS:
+                    print("[track] Maks antal bolde samlet.")
+                    stop_ev3()
+                    go_to_goal(goal_b, front, back)
+                    break
+                continue
 
         # === VISUALISERING ===
         for label, (x, y) in balls:

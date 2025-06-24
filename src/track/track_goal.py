@@ -36,13 +36,7 @@ def get_goal_positions():
 
 def draw_goals(image):
     """
-    Tegner mål A og B på det warpet billede.
-
-    Args:
-        image: Warpet BGR-billede (f.eks. fra warp_image)
-
-    Returns:
-        Annoteret billede
+    Tegner mål A og B på det warpet billede og returnerer billedet samt målets positioner.
     """
     img = image.copy()
     goal_a, goal_b = get_goal_positions()
@@ -53,4 +47,4 @@ def draw_goals(image):
     cv2.circle(img, goal_b, 10, (100, 255, 100), 2)
     cv2.putText(img, "Goal B", (goal_b[0] + 10, goal_b[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1)
 
-    return img
+    return img, goal_a, goal_b
