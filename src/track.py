@@ -1,5 +1,13 @@
 import cv2
 import numpy as np
+
+import os
+from config import DISABLE_MSMF
+# === Kamera-backend fix (Windows) ===
+if DISABLE_MSMF:
+    os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+# === Kamera-backend fix (Windows) ===
+
 from threading import Thread
 from config import CAMERA_INDEX, WARP_WIDTH, WARP_HEIGHT
 from utils.vision import warp_image
@@ -17,7 +25,7 @@ from ev3_move import move_towards_ball, stop_ev3, go_to_goal, reset_stop_state  
 
 # === THREAD-BASERET KAMERA ===
 class VideoStream:
-    def __init__(self, src=0):
+    def __init__(self, src):
         self.stream = cv2.VideoCapture(src)
         self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)

@@ -1,7 +1,8 @@
 from pathlib import Path
 
 # ====== CAMERA SETTINGS ======
-CAMERA_INDEX = 0  # Change if webcam uses index 0
+DISABLE_MSMF = True
+CAMERA_INDEX = 1  # Change if webcam uses index 0
 
 # ====== PROJECT STRUCTURE ======
 PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Gets the root folder
@@ -13,5 +14,5 @@ WARP_WIDTH = 640   # Output resolution of warped image
 WARP_HEIGHT = 480
 
 # ====== EV3 SETTINGS ======
-EV3_IP = "172.20.10.2"
+EV3_IP = "172.20.10.6"
 EV3_USER = "robot"
