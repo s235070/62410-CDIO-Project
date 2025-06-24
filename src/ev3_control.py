@@ -1,4 +1,5 @@
 # ev3_control.py
+
 import paramiko
 import time
 
@@ -25,7 +26,7 @@ def setup_connection():
         print(f"[SSH ERROR] Kunne ikke forbinde til EV3: {e}")
         _ssh_client = None
 
-# 🚀 Sender kommando til EV3 over SSH
+# 🚀 Almindelig kommando (bruges ikke længere aktivt)
 def send_command(cmd):
     global _ssh_client, _last_cmd, _last_sent_time
     if _ssh_client is None:
@@ -35,6 +36,26 @@ def send_command(cmd):
     now = time.time()
     if cmd == _last_cmd and (now - _last_sent_time) < _COOLDOWN_SECONDS:
         return  # Undgå gentagne samme kommandoer
+
+    try:
+        stdin, stdout, stderr = _ssh_client.exec_command(cmd)
+        print("[SSH OUTPUT]", stdout.read().decode())
+        _last_cmd = cmd
+        _last_sent_time = now
+    except Exception as e:
+        print(f"[SSH ERROR] {e}")
+
+# ✅ Sikker version (brug denne fra nu af!)
+def send_safe_command(cmd):
+    global _ssh_client, _last_cmd, _last_sent_time
+    if _ssh_client is None:
+        print("[SSH ERROR] Ingen aktiv forbindelse (kald setup_connection først)")
+        return
+
+    now = time.time()
+    if cmd == _last_cmd and (now - _last_sent_time) < _COOLDOWN_SECONDS:
+        print("[SSH] Kommando ignoreret pga. cooldown:", cmd)
+        return
 
     try:
         stdin, stdout, stderr = _ssh_client.exec_command(cmd)
@@ -57,3 +78,4 @@ CMD_RIGHT_SLIGHT     = "python3 move_robot.py right_slight"
 CMD_SPIN_LEFT        = "python3 move_robot.py spin_left"
 CMD_SPIN_RIGHT       = "python3 move_robot.py spin_right"
 CMD_STOP             = "python3 move_robot.py stop"
+CMD_BACK_A_LITTLE = "python3 move_robot.py back_a_little"

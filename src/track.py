@@ -105,7 +105,7 @@ def main():
             if reached_ball:
                 print("[TRACK] Bold er nået, stopper motor og aktiverer claw.")
                 stop_ev3()
-                pick_up_sequence()
+                pick_up_sequence(cap, matrix)
                 reset_stop_state()  # ← nøglelinje
 
                 collected_balls += 1

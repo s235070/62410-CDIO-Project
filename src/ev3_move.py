@@ -1,20 +1,23 @@
 # ev3_move.py
-import numpy as np
-from ev3_control import send_command
-import time
 
-CMD_FORWARD = "python3 move_robot.py forward"
-CMD_SPIN_LEFT = "python3 move_robot.py spin_left"
-CMD_SPIN_RIGHT = "python3 move_robot.py spin_right"
-CMD_STOP = "python3 move_robot.py stop"
+import numpy as np
+import time
+from ev3_control import (
+    send_safe_command,
+    CMD_FORWARD,
+    CMD_SPIN_LEFT,
+    CMD_SPIN_RIGHT,
+    CMD_BACK_A_LITTLE,
+    CMD_STOP
+)
 
 last_cmd = None
 command_cooldown = 0
 CMD_DELAY_FRAMES = 2
-has_stopped = False  # ← vigtigt: stopper ALT bagefter
+has_stopped = False
 
-# Du kan justere denne værdi:
-STOP_DISTANCE = 140  # afstand i pixels til bolden, hvor vi stopper
+# Justerbar afstand til mål/bold
+STOP_DISTANCE = 120  # pixels
 
 def move_towards_target(front, back, target, stop_distance=50):
     global last_cmd, command_cooldown
@@ -24,8 +27,8 @@ def move_towards_target(front, back, target, stop_distance=50):
 
     ev3_center = ((front[0] + back[0]) // 2, (front[1] + back[1]) // 2)
     vx, vy = front[0] - back[0], front[1] - back[1]
-
     ux, uy = target[0] - front[0], target[1] - front[1]
+
     dot = vx * ux + vy * uy
     det = vx * uy - vy * ux
     angle = np.degrees(np.arctan2(det, dot))
@@ -34,7 +37,7 @@ def move_towards_target(front, back, target, stop_distance=50):
     if dist < stop_distance:
         if last_cmd != CMD_STOP:
             print(f"[GOAL-STOP] Tæt nok på mål (dist={dist:.1f}) → {CMD_STOP}")
-            send_command(CMD_STOP)
+            send_safe_command(CMD_STOP)
             last_cmd = CMD_STOP
         return True
 
@@ -45,7 +48,7 @@ def move_towards_target(front, back, target, stop_distance=50):
 
     if cmd != last_cmd or command_cooldown == 0:
         print(f"[GOAL-MOVE] angle={angle:.1f}, dist={dist:.1f} → {cmd}")
-        send_command(cmd)
+        send_safe_command(cmd)
         last_cmd = cmd
         command_cooldown = CMD_DELAY_FRAMES
     else:
@@ -70,18 +73,16 @@ def move_towards_ball(front, back, balls):
     global last_cmd, command_cooldown, has_stopped
 
     if not front or not back or not balls or has_stopped:
-        return True  # Hvis vi allerede har stoppet → afslut
+        return True
 
-    # Robotens center = midt mellem front og bag
     ev3_center = ((front[0] + back[0]) // 2, (front[1] + back[1]) // 2)
     vx, vy = front[0] - back[0], front[1] - back[1]
 
-    # Find nærmeste bold
     nearest = None
     min_dist = float("inf")
     for _, (bx, by) in balls:
-        d = np.hypot(back[0] - bx, back[1] - by)  # afstand fra bagenden
-        if d < 60:
+        d = np.hypot(back[0] - bx, back[1] - by)
+        if d < 50:
             continue
         if d < min_dist:
             min_dist = d
@@ -90,22 +91,19 @@ def move_towards_ball(front, back, balls):
     if nearest is None:
         return False
 
-    # Bold-retning ift. EV3
     ux, uy = nearest[0] - front[0], nearest[1] - front[1]
     dot = vx * ux + vy * uy
     det = vx * uy - vy * ux
     angle = np.degrees(np.arctan2(det, dot))
 
-    # === STOPPUNKT ===
     if min_dist < STOP_DISTANCE:
         if last_cmd != CMD_STOP:
             print(f"[STOP] Stopper før bolden (dist={min_dist:.1f}) → {CMD_STOP}")
-            send_command(CMD_STOP)
+            send_safe_command(CMD_STOP)
             last_cmd = CMD_STOP
             has_stopped = True
-        return True  # Vi har nået destination
+        return True
 
-    # === Drej eller kør frem ===
     if abs(angle) > 10:
         cmd = CMD_SPIN_RIGHT if angle > 0 else CMD_SPIN_LEFT
     else:
@@ -113,17 +111,17 @@ def move_towards_ball(front, back, balls):
 
     if cmd != last_cmd or command_cooldown == 0:
         print(f"[MOVE] angle={angle:.1f}, dist={min_dist:.1f} → {cmd}")
-        send_command(cmd)
+        send_safe_command(cmd)
         last_cmd = cmd
         command_cooldown = CMD_DELAY_FRAMES
     else:
         command_cooldown = max(0, command_cooldown - 1)
 
-    return False  # Vi har ikke ramt bolden endnu
+    return False
 
 def stop_ev3():
     global last_cmd, has_stopped
-    send_command(CMD_STOP)
+    send_safe_command(CMD_STOP)
     last_cmd = CMD_STOP
     has_stopped = True
     print("[FORCE STOP] Robotten blev tvunget til at stoppe")
