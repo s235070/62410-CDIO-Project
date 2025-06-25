@@ -17,7 +17,7 @@ CMD_DELAY_FRAMES = 2
 has_stopped = False
 
 # Justerbar afstand til mål/bold
-STOP_DISTANCE = 120  # pixels
+STOP_DISTANCE = 100  # pixels
 
 def move_towards_target(front, back, target, stop_distance=50):
     global last_cmd, command_cooldown
@@ -82,7 +82,7 @@ def move_towards_ball(front, back, balls):
     min_dist = float("inf")
     for _, (bx, by) in balls:
         d = np.hypot(back[0] - bx, back[1] - by)
-        if d < 50:
+        if d < 40:
             continue
         if d < min_dist:
             min_dist = d

@@ -81,13 +81,24 @@ def main():
     arena_mask = create_manual_mask(arena_polygon, warped.shape[:2])
     cv2.destroyWindow("Warped Preview")
 
+    # Konverter polygoner til numpy arrays
+    cross_poly_np = np.array(cross_poly, dtype=np.float32) if cross_poly is not None else None
+    arena_np = np.array(arena_polygon, dtype=np.float32)
+
+    def is_outside_all_polygons(point, arena, cross):
+        in_arena = cv2.pointPolygonTest(arena, point, False) >= 0
+        in_cross = cv2.pointPolygonTest(cross, point, False) >= 0 if cross is not None else False
+        return not (in_arena or in_cross)
+
     # === KØR IGENNEM BILLEDER ===
     while True:
         frame = cap.read()
         warped = warp_image(frame, matrix, WARP_WIDTH, WARP_HEIGHT)
         warped, goal_a, goal_b = draw_goals(warped)
 
-        balls = detect_balls_yolo(warped)
+        all_balls = detect_balls_yolo(warped)
+        balls = [b for b in all_balls if is_outside_all_polygons(b[1], arena_np, cross_poly_np)]
+
         front, back, *_ = detect_ev3(warped)
 
         if front and back:
@@ -95,7 +106,7 @@ def main():
             balls = [b for b in balls if np.hypot(b[1][0] - center[0], b[1][1] - center[1]) > 60]
 
             if cross_poly is not None:
-                dist = cv2.pointPolygonTest(np.array(cross_poly, dtype=np.float32), center, True)
+                dist = cv2.pointPolygonTest(cross_poly_np, center, True)
                 if dist >= 0 or abs(dist) < 25:
                     print(f"[CROSS] Stop tæt på kryds (dist={dist:.1f})")
                     continue
@@ -106,7 +117,7 @@ def main():
                 print("[TRACK] Bold er nået, stopper motor og aktiverer claw.")
                 stop_ev3()
                 pick_up_sequence(cap, matrix)
-                reset_stop_state()  # ← nøglelinje
+                reset_stop_state()
 
                 collected_balls += 1
                 if collected_balls >= MAX_BALLS:
@@ -117,12 +128,16 @@ def main():
                 continue
 
         # === VISUALISERING ===
-        for label, (x, y) in balls:
-            color = COLOR_BGR.get(label, (200, 200, 200))
-            cv2.circle(warped, (x, y), 10, color, 2)
+        for label, (x, y) in all_balls:
+            pt = (x, y)
+            if is_outside_all_polygons(pt, arena_np, cross_poly_np):
+                color = COLOR_BGR.get(label, (200, 200, 200))
+                cv2.circle(warped, pt, 10, color, 2)
+            else:
+                cv2.circle(warped, pt, 10, (0, 0, 255), 1)  # rød = forbudt område
 
         if cross_poly is not None:
-            poly = np.array([cross_poly], dtype=np.int32)
+            poly = np.array([cross_poly_np], dtype=np.int32)
             cv2.polylines(warped, [poly], True, (0, 0, 255), 2)
 
         if front and back:
