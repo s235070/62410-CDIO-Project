@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+#imports so that they can help
 import os
 from config import DISABLE_MSMF
 if DISABLE_MSMF:
