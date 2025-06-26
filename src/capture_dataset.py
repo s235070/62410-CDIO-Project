@@ -7,6 +7,8 @@ SAVE_DIR = "dataset/images"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 def main():
+    print("[INFO] Starting camera...")
+
     cap = cv2.VideoCapture(CAMERA_INDEX, cv2.CAP_DSHOW)
 
     if not cap.isOpened():
