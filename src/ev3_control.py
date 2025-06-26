@@ -79,3 +79,7 @@ CMD_SPIN_LEFT        = "python3 move_robot.py spin_left"
 CMD_SPIN_RIGHT       = "python3 move_robot.py spin_right"
 CMD_STOP             = "python3 move_robot.py stop"
 CMD_BACK_A_LITTLE = "python3 move_robot.py back_a_little"
+
+
+def is_connected():
+    return _ssh_client is not None
