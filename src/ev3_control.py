@@ -3,7 +3,7 @@
 import paramiko
 import time
 
-# 🔧 IP-adressen til EV3 
+# IP-adressen til EV3 
 EV3_HOST = "172.20.10.2"
 EV3_USER = "robot"
 EV3_PASS = "maker"
@@ -12,9 +12,9 @@ EV3_PASS = "maker"
 _ssh_client = None
 _last_cmd = None
 _last_sent_time = 0
-_COOLDOWN_SECONDS = 1.5  # Undgå spam
+_COOLDOWN_SECONDS = 1.5  #  spam
 
-# 🔌 Opretter SSH-forbindelse til EV3
+# Opretter SSH-forbindelse til EV3
 def setup_connection():
     global _ssh_client
     _ssh_client = paramiko.SSHClient()
@@ -26,7 +26,7 @@ def setup_connection():
         print(f"[SSH ERROR] Kunne ikke forbinde til EV3: {e}")
         _ssh_client = None
 
-# 🚀 Almindelig kommando (bruges ikke længere aktivt)
+# Almindelig kommando
 def send_command(cmd):
     global _ssh_client, _last_cmd, _last_sent_time
     if _ssh_client is None:
@@ -45,7 +45,7 @@ def send_command(cmd):
     except Exception as e:
         print(f"[SSH ERROR] {e}")
 
-# ✅ Sikker version (brug denne fra nu af!)
+# Sikker version
 def send_safe_command(cmd):
     global _ssh_client, _last_cmd, _last_sent_time
     if _ssh_client is None:
@@ -65,7 +65,7 @@ def send_safe_command(cmd):
     except Exception as e:
         print(f"[SSH ERROR] {e}")
 
-# ✅ Tilgængelige bevægelseskommandoer (match til move_robot.py)
+# Tilgængelige bevægelseskommandoer (match til move_robot.py)
 CMD_FORWARD          = "python3 move_robot.py forward"
 CMD_FORWARD_SLIGHT   = "python3 move_robot.py forward_slight"
 CMD_FORWARD_LONG     = "python3 move_robot.py forward_long"

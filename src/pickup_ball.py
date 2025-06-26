@@ -8,7 +8,7 @@ from ev3_control import send_safe_command, CMD_FORWARD_SLIGHT, CMD_BACKWARD_SLIG
 from track.track_balls import detect_balls_yolo
 from track.track_ev3 import detect_ev3
 from ev3_move import stop_ev3
-from track.track_balls import COLOR_BGR  # Husk denne import
+from track.track_balls import COLOR_BGR  
 def open_claw():
     send_safe_command("python3 move_robot.py open_claw")
     print("[CLAW] Åbner kløerne...")
