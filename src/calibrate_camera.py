@@ -16,7 +16,7 @@ objp *= SQUARE_SIZE
 objpoints = []  # 3D virkelige punkter
 imgpoints = []  # 2D billedepunkter
 
-images = glob.glob("calibration_images/*.jpg")
+images = sorted(glob.glob("calibration_images/*.jpg"))
 print(f"[INFO] Antal billeder fundet: {len(images)}")
 
 if not images:
