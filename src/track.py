@@ -3,11 +3,8 @@ import numpy as np
 
 import os
 from config import DISABLE_MSMF
-# === Kamera-backend fix (Windows) ===
 if DISABLE_MSMF:
     os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
-# === Kamera-backend fix (Windows) ===
-
 from threading import Thread
 from config import CAMERA_INDEX, WARP_WIDTH, WARP_HEIGHT
 from utils.vision import warp_image
