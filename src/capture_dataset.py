@@ -36,3 +36,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+frame_count = 0  # Tilføj udenfor while-loopet
+
+# Inde i if key == 32-blokken:
+frame_count += 1
+print(f"[INFO] Total frames saved: {frame_count}")
