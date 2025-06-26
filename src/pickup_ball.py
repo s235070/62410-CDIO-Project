@@ -62,7 +62,7 @@ def pick_up_sequence(cap, matrix):
 
         ev3_center = ((front[0] + back[0]) // 2, (front[1] + back[1]) // 2)
 
-        # 🔴 Fjern bolde for tæt på EV3 (fx under 60 pixels)
+     
         balls = [b for b in balls if np.hypot(b[1][0] - ev3_center[0], b[1][1] - ev3_center[1]) > 60]
         if not balls:
             print("[PICKUP] Ingen gyldige bolde (alle for tæt på EV3).")

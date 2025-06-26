@@ -12,7 +12,7 @@ EV3_PASS = "maker"
 _ssh_client = None
 _last_cmd = None
 _last_sent_time = 0
-_COOLDOWN_SECONDS = 1.5  #  spam
+_COOLDOWN_SECONDS = 1.5  
 
 # Opretter SSH-forbindelse til EV3
 def setup_connection():

@@ -54,7 +54,7 @@ np.savez("calibration_data/camera_calibration.npz",
          camera_matrix=camera_matrix,
          dist_coeffs=dist_coeffs)
 
-print("\n✅ Kalibrering gemt i: calibration_data/camera_calibration.npz")
+print("\n Kalibrering gemt i: calibration_data/camera_calibration.npz")
 # Gem kameramatricen og forvrængningskoefficienter til fil
 np.savez("calibration_data/camera_calibration.npz", 
          camera_matrix=camera_matrix, 
