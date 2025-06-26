@@ -16,7 +16,7 @@ def main():
         return
 
     print("[INFO] Press SPACE to save frame, ESC to quit.")
-
+cv2.waitKey(2000)
     while True:
         ret, frame = cap.read()
         if not ret:
