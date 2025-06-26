@@ -4,7 +4,7 @@ import paramiko
 import time
 
 # IP-adressen til EV3 
-EV3_HOST = "172.20.10.2"
+EV3_HOST = "xxx.xxx.xx.xx"
 EV3_USER = "robot"
 EV3_PASS = "maker"
 
