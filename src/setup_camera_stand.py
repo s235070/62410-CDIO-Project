@@ -47,7 +47,7 @@ def main():
     matrix = compute_homography(corners, WARP_WIDTH, WARP_HEIGHT)
     warped = warp_image(frame, matrix, WARP_WIDTH, WARP_HEIGHT)
 
-    # Vis warp preview
+    # Warp preview
     cv2.imshow("Warped Arena", warped)
     cv2.waitKey(500)
 
